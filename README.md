@@ -23,7 +23,7 @@ While this code will work for many ESP32 devices and can be ported to other type
 
 - [ESP32](https://www.adafruit.com/product/5325)
 - [NeoPixel Stick](https://www.adafruit.com/product/1426)
-- Connect board A0 -> ~470ohm resistor -> pixels DIN
+- Connect board A0 -> [470ohm resistor](https://www.adafruit.com/product/2781) -> pixels DIN
 - Connect board V5-> pixels VDC
 - Connect board GND -> pixels GND
 
