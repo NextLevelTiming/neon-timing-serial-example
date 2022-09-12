@@ -14,6 +14,10 @@ const int NT_PROTOCOL_DISCONNECTED = 0;
 const int NT_PROTOCOL_SERIAL = 1;
 int neonTimingConnectionProtocol = NT_PROTOCOL_DISCONNECTED;
 bool rncAllowedEventsLog = false;
+unsigned long connectionLastHeartbeatTime = millis();
+unsigned long connectionLastHeartbeatPingTime = millis();
+unsigned long connectionHeartbeatTimeout = 10000;
+unsigned long connectionHeartbeatInterval = connectionHeartbeatTimeout / 3;
 
 // Neon Timing Connection Light
 const int connectionLightToggleDelay = 1000;
@@ -234,18 +238,27 @@ void writeLog(const char* message) {
 }
 
 void serialMessageLoop() {
-
-  if (millis() - connectionLightLastToggleTime > connectionLightToggleDelay && neonTimingConnectionProtocol == NT_PROTOCOL_DISCONNECTED) {
+  if (neonTimingConnectionProtocol == NT_PROTOCOL_DISCONNECTED && millis() - connectionLightLastToggleTime > connectionLightToggleDelay) {
     toggleConnectionLight();
   }
 
-  if (!Serial && neonTimingConnectionProtocol == NT_PROTOCOL_SERIAL) {
-    updateNeonTimingConnectionState(NT_PROTOCOL_DISCONNECTED);
+  if (neonTimingConnectionProtocol == NT_PROTOCOL_SERIAL) {
+    // If heartbeat timeout occurs then disconnection
+    if (millis() - connectionLastHeartbeatTime > connectionHeartbeatTimeout) {
+      updateNeonTimingConnectionState(NT_PROTOCOL_DISCONNECTED);
+    }
+    // If heartbeat timeout 
+    else if (millis() - connectionLastHeartbeatTime > connectionHeartbeatInterval && millis() - connectionLastHeartbeatPingTime > connectionHeartbeatInterval) {
+      sendHandshakeMessage("handshake_init", NT_PROTOCOL_SERIAL);
+      connectionLastHeartbeatPingTime = millis();
+    }
   }
 
   if (Serial.available() <= 0) {
     return;
   }
+
+  connectionLastHeartbeatTime = millis();
 
   Serial.readBytesUntil('\n', serialBuffer, SERIAL_BUFFER_MAX - 1);
 
